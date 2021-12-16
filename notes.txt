@@ -1,0 +1,68 @@
+# форкнул репо и склонировал
+# выполнил docker-compose up
+
+## пробую практику, чтобы разобраться
+
+## пример 1
+# внутри репо выполняю
+docker run --rm --name elk_demo_logstash -v $(pwd)/logstash:/app --net elk_demo_elastic -it logstash:7.14.1 logstash -f /app/logstash_stdin.conf
+# не получилось, потому что забыл перейти в папку с репо
+# повторяю
+# какая то ошибка при запуске
+# пробую запустить так
+docker run --rm --name elk_demo_logstash -v /mnt/c/Repositories/elk_demo/logstash:/app --net elk_demo_elastic -it logstash:7.14.1 logstash -f /app/logstash_stdin.conf
+
+# получилось, но логстеш не увидел эластик, потому что в conf нужно указать айпишник внутри docker network
+# для этого нужно найти ID сети и посмотреть в её описание
+docker network ls
+docker network inspect 2dceaca88e61
+# в разделе Containers надо найти эластик и скопировать его ip в conf файл
+# пробую ещё раз
+# получилось
+# далее по видео настраиваю кибану (http://localhost:5601)
+# пробую отправить в stdin сообщения - всё ок
+
+
+## пример 2
+# заранее поправил ip аддрес в conf файле
+docker run --rm --name elk_demo_logstash -v /mnt/c/Repositories/elk_demo/logstash:/app --net elk_demo_elastic -it logstash:7.14.1 logstash -f /app/logstash_stdin_filter.conf
+# отправил такое
+privet
+{"key":"value"}
+{"what" : "privet" }
+# всё ок
+
+
+## пример 3
+# заранее поправил ip аддрес в conf файле
+docker run --rm --name elk_demo_logstash -v /mnt/c/Repositories/elk_demo/logstash:/app --net elk_demo_elastic -it logstash:7.14.1 logstash -f /app/logstash_stdin_with_drop.conf
+# отправил такое
+privet
+{"what" : "privet" }
+{ "tag": "my-app", "field1": "privet"}
+# всё ок
+
+
+
+## приступаю к ДЗ
+# добавил в clickstream.conf коннект к эластик
+# добавил в clickstream.conf наименование для индекса
+
+# запустил
+docker run --rm --name elk_demo_logstash --net elk_demo_elastic -v /mnt/c/Repositories/elk_demo/logstash:/app -it logstash:7.14.1 logstash -f /app/clickstream.conf
+
+# в кибане месседж получился нераспарсенным
+# похоже надо явно указать в фильтре, что у нас csv
+# также укажу фильтр для даты
+# ещё укажу грок для разбора колонки URL
+# запустил, но ничего не парсится. буду запускать почастям.
+
+# оказывается дефолтный output в conf из репо позволяют удобно дебажить
+# сделал копию csv, оставил несколько разных строк
+# дебажу
+# добавил дроп для строк, которые не получилось распарсить гроком
+# вроде всё ок с дебагом, пробую отправить в эластик
+# сначала показалось, что не получилось, так как в discover было пусто, но на самом деле всё ок
+# просто дата успешно распарсилась и нужно было поправить фильтр по дате на 2017-2018 года
+
+# поковырялся в кибане и всё сделал
